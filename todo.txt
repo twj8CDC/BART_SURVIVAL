@@ -14,4 +14,6 @@ python3 -m build
 
 
 #todo
-create a pytest run script
+1. create a pytest run script
+2. setup github
+3.
