@@ -29,12 +29,12 @@ from sksurv import nonparametric
 # from causalpy import pymc_experiments, pymc_models, skl_experiments, skl_models
 # from causalpy.version import __version__
 
-from .data import load_data
+# from .data import load_data
 
 __all__ = [
     "surv_bart",
     # "utilities",
-    "simulation",
+    "simulation.check_inputs",
     # "load_data",
     "__version__"
 ]
