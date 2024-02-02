@@ -1,0 +1,17 @@
+
+# use this for managing the package while editing the code
+$ pip install --editable .
+
+
+# use this to push to pypitest
+python3 -m twine upload --repository testpypi dist/*.1.3* --verbose
+
+# use this to install from pypitest
+python3 -m pip install --index-url https://test.pypi.org/simple/ --no-deps BART_SURVIVAL==0.0.1.3
+
+# use this to build 
+python3 -m build
+
+
+#todo
+create a pytest run script
