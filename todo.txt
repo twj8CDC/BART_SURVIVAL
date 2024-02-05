@@ -18,3 +18,4 @@ python3 -m build
 2. setup github
 3. finish surv_bart module
 4. fix the "exp" in simulation
+5. Case-cohort module

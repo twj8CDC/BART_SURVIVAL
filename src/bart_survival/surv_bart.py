@@ -23,13 +23,24 @@ from numpy.random import RandomState
 RANDOM_SEED = 8927
 rng = np.random.default_rng(RANDOM_SEED)
 
-# class BartSurvModel(ModelBuilder):
-class BartSurvModel():
-    # Give the model a name
+class BartSurvModel(ModelBuilder):
+# class BartSurvModel():
     _model_type = "BART_Survival"
-
-    # And a version
     version = "0.1"
+    def __init__(
+        self,
+        model_config: Dict = None,
+        sampler_config: Dict = None,
+    ):
+        sampler_config = (
+            self.get_default_sampler_config() if sampler_config is None else sampler_config
+        )
+        self.sampler_config = sampler_config
+        model_config = self.get_default_model_config() if model_config is None else model_config
+        self.model_config = model_config  # parameters for priors etc.
+        self.model = None  # Set by build_model
+        self.idata: Optional[az.InferenceData] = None  # idata is generated during fitting
+        self.is_fitted_ = False
 
     def build_model(self, X: np.ndarray, 
                         y: np.ndarray,                        
@@ -52,15 +63,9 @@ class BartSurvModel():
             return pm.Bernoulli.dist(mu, size=size)
         # offset
         self.offset = sp.norm.ppf(np.mean(self.y))
-
-        
         # model coords
         mcoords = {"xvars":self.predictor_names}
-            #"p_obs": coords,
-                            # ("t_obs", self.X[:,0)),
-                    # "xvars":self.predictor_names}
-    
-    
+
         with pm.Model(coords=mcoords) as self.model:    
             self.model.add_coord("p_obs", coords, mutable=True)
             x_data = pm.MutableData("x_data", self.X, dims=("p_obs", "xvars"))
@@ -79,11 +84,6 @@ class BartSurvModel():
         with self.model:
             sampler_args = {**self.sampler_config, **kwargs}
             idata = pm.sample(**sampler_args)
-            # remove the automatic posterior
-            # idata.extend(pm.sample_prior_predictive())
-            # pm.set_data({"x_data":self.x_tst})
-            # idata.extend(pm.sample_posterior_predictive(idata, var_names=["mu"]))
-
         idata = self.set_idata_attrs(idata)
         return idata
 
@@ -320,50 +320,19 @@ class BartSurvModel():
         self.predictor_names = predictor_names
 
         # self.y_trn, self.x_trn = surv_pre_train(y, X)        
-        self.x_tst = get_posterior_test(self.uniq_times, X)
+        # self.x_tst = get_posterior_test(self.uniq_times, X)
         
 
 def get_time_transform(t_event, time_scale = 10):
     return np.ceil(t_event/time_scale)
     
-
 def get_y_sklearn(status, t_event):
     y = np.array(list(zip(np.array(status, dtype="bool"), t_event)), dtype=[("Status","?"),("Survival_in_days", "<f8")])
     return y
 
-def get_case_cohort(y_sk, x_sk, prop = 1):
-    if type(x_sk).__module__ != "numpy":
-        print("x_sk needs to be a np array")
-        return
-    if prop == 1:
-        weights = np.ones(y_sk.shape[0])
-        return(y_sk, x_sk, weights)
-
-    case_mask = (y_sk["Status"] == True)
-    case_y = y_sk[case_mask]
-    case_x = x_sk[case_mask]
-
-    PRCNT = prop
-    N = x_sk.shape[0]
-    NSMP = int(N*PRCNT)
-    sample_mask = np.random.choice(np.arange(0,x_sk.shape[0]), NSMP, replace=False)
-
-    sub_x = x_sk[sample_mask,:]
-    sub_y = y_sk[sample_mask]
-
-    # join cohort
-    coh_x = np.vstack([case_x, sub_x])
-    coh_y = np.concatenate([case_y, sub_y])
-
-    cntrl_msk = np.where(coh_y["Status"]==False)
-    weight = np.ones(coh_y.shape)
-    weight[cntrl_msk] = (1/PRCNT)
-
-    return coh_y, coh_x, weight
-
-
-
-def surv_pre_train(y_sk, x_sk, weight):
+def surv_pre_train(y_sk, x_sk, weight = None):
+    if weight is None:
+        weight = np.ones(y_sk.shape[0])
     t_sk = y_sk["Survival_in_days"]
     d_sk = np.array(y_sk["Status"], dtype="int")
     t_uniq, t_inv = np.unique(t_sk, return_inverse=True)
@@ -396,10 +365,16 @@ def surv_pre_train(y_sk, x_sk, weight):
 
     # get coords
     coords = np.repeat(np.arange(0,x_sk.shape[0]), t_inv+1)
-    return trn_y, trn_x, weight_long, coords
+    return {
+            "y":trn_y, 
+            "x":trn_x, 
+            "w":weight_long, 
+            "coord":coords
+        }
 
 
-def get_posterior_test(uniq_times, x_test):
+def get_posterior_test(y_sk, x_test):
+    uniq_times = np.unique(y_sk["Survival_in_days"])
     s0 = x_test.shape[0] # length
     s1 = x_test.shape[1] # width
     # create time range
@@ -409,7 +384,7 @@ def get_posterior_test(uniq_times, x_test):
     out = np.hstack([d2,d3])
     # coordinates
     coords = np.repeat(np.arange(0, x_test.shape[0]), d1.shape[0])
-    return out, coords
+    return {"post_x": out, "coords":coords}
 
     
 # def get_survival(post, axis=1, mean=True, values=True):
