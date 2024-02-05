@@ -16,4 +16,5 @@ python3 -m build
 #todo
 1. create a pytest run script
 2. setup github
-3.
+3. finish surv_bart module
+4. fix the "exp" in simulation
