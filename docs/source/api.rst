@@ -1,4 +1,4 @@
-BART_SURVIVAL API
+API
 =====================
 
 .. autosummary::

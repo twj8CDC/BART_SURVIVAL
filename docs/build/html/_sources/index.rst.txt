@@ -6,9 +6,13 @@
 Welcome to BART Survival's documentation!
 =========================================
 
+Information regarding installation can be found :ref:`here <installation>`.
+
+Examples of BART_SURVIAL usage can be found :ref:`here <examples>`.
 
 .. toctree::
    api
+   user_guide
    :maxdepth: 2
    :caption: Contents:
 
