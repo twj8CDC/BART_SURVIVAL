@@ -33,8 +33,6 @@ from sksurv import nonparametric
 
 __all__ = [
     "surv_bart",
-    # "utilities",
-    "simulation.check_inputs",
-    # "load_data",
+    "simulation",
     "__version__"
 ]

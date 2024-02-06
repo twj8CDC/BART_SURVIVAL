@@ -1,11 +1,10 @@
 arviz
 numpy
 scipy
-sksurv
-pymc_experimental
 typing
 pathlib
 pymc
 pymc_bart
 xarray
-pytensorcloudpickle
+pytensor
+cloudpickle

@@ -5,11 +5,10 @@ License-File: LICENSE
 Requires-Dist: arviz
 Requires-Dist: numpy
 Requires-Dist: scipy
-Requires-Dist: sksurv
-Requires-Dist: pymc_experimental
 Requires-Dist: typing
 Requires-Dist: pathlib
 Requires-Dist: pymc
 Requires-Dist: pymc_bart
 Requires-Dist: xarray
-Requires-Dist: pytensorcloudpickle
+Requires-Dist: pytensor
+Requires-Dist: cloudpickle
