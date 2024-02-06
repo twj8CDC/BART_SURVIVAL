@@ -1,9 +1,0 @@
-LICENSE
-README.md
-pyproject.toml
-setup.py
-bart_survival.egg-info/PKG-INFO
-bart_survival.egg-info/SOURCES.txt
-bart_survival.egg-info/dependency_links.txt
-bart_survival.egg-info/requires.txt
-bart_survival.egg-info/top_level.txt
