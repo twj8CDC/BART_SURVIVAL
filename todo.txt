@@ -17,6 +17,13 @@ python3 -m build
 
 #############################
 Documentation
+sphinx-build -M html docs/source docs/build
+
+###########################
+github
+git remote add origin https://github.com/twj8CDC/BART_SURVIVAL.git
+git branch -M main
+git push -u origin main
 
 
 
