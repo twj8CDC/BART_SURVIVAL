@@ -17,6 +17,8 @@ python3 -m build
 
 #############################
 Documentation
+Documentation is controlled in the gh_pages branch.
+
 sphinx-build -M html docs/source docs/build
 
 ###########################
