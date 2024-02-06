@@ -1,19 +1,27 @@
+###########################
+Package building 
 
 # use this for managing the package while editing the code
 $ pip install --editable .
 
-
 # use this to push to pypitest
 python3 -m twine upload --repository testpypi dist/*.1.3* --verbose
+python3 -m twine upload dist/*0.0.5* --verbose
 
 # use this to install from pypitest
 python3 -m pip install --index-url https://test.pypi.org/simple/ --no-deps BART_SURVIVAL==0.0.1.3
+pip install  BART_SURVIVAL==0.0.5
 
 # use this to build docs
 python3 -m build
 
+#############################
+Documentation
 
-#todo
+
+
+#######################################
+TODO
 1. create a pytest run script       DONE
 2. setup github
 3. finish surv_bart module
