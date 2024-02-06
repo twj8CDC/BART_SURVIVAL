@@ -1,7 +1,7 @@
-﻿simulation
-==========
+﻿bart\_survival.simulation
+=========================
 
-.. automodule:: simulation
+.. automodule:: bart_survival.simulation
 
    
    

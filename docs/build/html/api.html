@@ -11,10 +11,9 @@
     <script src="_static/documentation_options.js?v=3dfe6f15"></script>
     <script src="_static/doctools.js?v=888ff710"></script>
     <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
-    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="next" title="surv_bart" href="generated/surv_bart.html" />
+    <link rel="next" title="BART_SURVIAL.surv_bart" href="surv_bart.html" />
     <link rel="prev" title="Welcome to BART Survival’s documentation!" href="index.html" />
    
   <link rel="stylesheet" href="_static/custom.css" type="text/css" />
@@ -35,16 +34,32 @@
             
   <section id="api">
 <h1>API<a class="headerlink" href="#api" title="Link to this heading">¶</a></h1>
-<table class="autosummary longtable docutils align-default">
-<tbody>
-<tr class="row-odd"><td><p><a class="reference internal" href="generated/surv_bart.html#module-surv_bart" title="surv_bart"><code class="xref py py-obj docutils literal notranslate"><span class="pre">surv_bart</span></code></a></p></td>
-<td><p></p></td>
-</tr>
-<tr class="row-even"><td><p><a class="reference internal" href="generated/simulation.html#module-simulation" title="simulation"><code class="xref py py-obj docutils literal notranslate"><span class="pre">simulation</span></code></a></p></td>
-<td><p>Generate a simulated survival datasets</p></td>
-</tr>
-</tbody>
-</table>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="surv_bart.html">BART_SURVIAL.surv_bart</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="surv_bart.html#surv_bart.BartSurvModel"><code class="docutils literal notranslate"><span class="pre">BartSurvModel</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="surv_bart.html#surv_bart.get_pdp"><code class="docutils literal notranslate"><span class="pre">get_pdp()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="surv_bart.html#surv_bart.get_posterior_test"><code class="docutils literal notranslate"><span class="pre">get_posterior_test()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="surv_bart.html#surv_bart.get_surv_pre_train"><code class="docutils literal notranslate"><span class="pre">get_surv_pre_train()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="surv_bart.html#surv_bart.get_sv_mean_quant"><code class="docutils literal notranslate"><span class="pre">get_sv_mean_quant()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="surv_bart.html#surv_bart.get_sv_prob"><code class="docutils literal notranslate"><span class="pre">get_sv_prob()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="surv_bart.html#surv_bart.get_time_transform"><code class="docutils literal notranslate"><span class="pre">get_time_transform()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="surv_bart.html#surv_bart.get_y_sklearn"><code class="docutils literal notranslate"><span class="pre">get_y_sklearn()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="surv_bart.html#surv_bart.pdp_diff_metric"><code class="docutils literal notranslate"><span class="pre">pdp_diff_metric()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="surv_bart.html#surv_bart.pdp_rr_metric"><code class="docutils literal notranslate"><span class="pre">pdp_rr_metric()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="simulation.html">BART_SURVIAL.simulation</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="simulation.html#simulation.check_inputs"><code class="docutils literal notranslate"><span class="pre">check_inputs()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="simulation.html#simulation.get_x_matrix"><code class="docutils literal notranslate"><span class="pre">get_x_matrix()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="simulation.html#simulation.inverse_weibull_survival"><code class="docutils literal notranslate"><span class="pre">inverse_weibull_survival()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="simulation.html#simulation.simulate_survival"><code class="docutils literal notranslate"><span class="pre">simulate_survival()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="simulation.html#simulation.weibull_hazard"><code class="docutils literal notranslate"><span class="pre">weibull_hazard()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="simulation.html#simulation.weibull_survival"><code class="docutils literal notranslate"><span class="pre">weibull_survival()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</div>
 </section>
 
 
@@ -67,8 +82,8 @@
 <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
 <ul class="current">
 <li class="toctree-l1 current"><a class="current reference internal" href="#">API</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="generated/surv_bart.html">surv_bart</a></li>
-<li class="toctree-l2"><a class="reference internal" href="generated/simulation.html">simulation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="surv_bart.html">BART_SURVIAL.surv_bart</a></li>
+<li class="toctree-l2"><a class="reference internal" href="simulation.html">BART_SURVIAL.simulation</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="user_guide.html">User Guide</a></li>
@@ -79,7 +94,7 @@
 <ul>
   <li><a href="index.html">Documentation overview</a><ul>
       <li>Previous: <a href="index.html" title="previous chapter">Welcome to BART Survival’s documentation!</a></li>
-      <li>Next: <a href="generated/surv_bart.html" title="next chapter">surv_bart</a></li>
+      <li>Next: <a href="surv_bart.html" title="next chapter">BART_SURVIAL.surv_bart</a></li>
   </ul></li>
 </ul>
 </div>

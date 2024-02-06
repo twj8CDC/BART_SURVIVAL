@@ -5,7 +5,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>surv_bart module &#8212; BART Survival 02/01/2024 documentation</title>
+    <title>BART_SURVIAL.surv_bart &#8212; BART Survival 02/01/2024 documentation</title>
     <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=d1102ebc" />
     <link rel="stylesheet" type="text/css" href="_static/alabaster.css?v=12dfc556" />
     <script src="_static/documentation_options.js?v=3dfe6f15"></script>
@@ -13,6 +13,8 @@
     <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="BART_SURVIAL.simulation" href="simulation.html" />
+    <link rel="prev" title="API" href="api.html" />
    
   <link rel="stylesheet" href="_static/custom.css" type="text/css" />
   
@@ -31,12 +33,11 @@
           <div class="body" role="main">
             
   <section id="module-surv_bart">
-<span id="surv-bart-module"></span><h1>surv_bart module<a class="headerlink" href="#module-surv_bart" title="Link to this heading">¶</a></h1>
+<span id="bart-survial-surv-bart"></span><h1>BART_SURVIAL.surv_bart<a class="headerlink" href="#module-surv_bart" title="Link to this heading">¶</a></h1>
 <dl class="py class">
 <dt class="sig sig-object py" id="surv_bart.BartSurvModel">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">surv_bart.</span></span><span class="sig-name descname"><span class="pre">BartSurvModel</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model_config</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sampler_config</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#surv_bart.BartSurvModel" title="Link to this definition">¶</a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
-<p>BART Survival Model</p>
+<dd><p>BART Survival Model</p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns<span class="colon">:</span></dt>
 <dd class="field-odd"><p>BartSurvModel</p>
@@ -116,11 +117,6 @@
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="surv_bart.BartSurvModel.get_default_model_config">
-<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">get_default_model_config</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Dict</span></span></span><a class="headerlink" href="#surv_bart.BartSurvModel.get_default_model_config" title="Link to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="py method">
 <dt class="sig sig-object py" id="surv_bart.BartSurvModel.get_default_sampler_config">
 <em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">get_default_sampler_config</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Dict</span></span></span><a class="headerlink" href="#surv_bart.BartSurvModel.get_default_sampler_config" title="Link to this definition">¶</a></dt>
 <dd><p>Default Sampler Configuration.</p>
@@ -169,11 +165,6 @@ version, and model type.</p>
 </dd>
 </dl>
 </dd></dl>
-
-<dl class="py property">
-<dt class="sig sig-object py" id="surv_bart.BartSurvModel.output_var">
-<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">output_var</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><a class="headerlink" href="#surv_bart.BartSurvModel.output_var" title="Link to this definition">¶</a></dt>
-<dd></dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="surv_bart.BartSurvModel.sample_model">
@@ -240,11 +231,6 @@ version, and model type.</p>
 </dd>
 </dl>
 </dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="surv_bart.BartSurvModel.version">
-<span class="sig-name descname"><span class="pre">version</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'0.1'</span></em><a class="headerlink" href="#surv_bart.BartSurvModel.version" title="Link to this definition">¶</a></dt>
-<dd></dd></dl>
 
 </dd></dl>
 
@@ -457,14 +443,23 @@ In example, if there are 90 days in the event-time and down-scaling of 30 was ap
 
 <h3>Navigation</h3>
 <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="api.html">BART_SURVIVAL Modules</a></li>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="api.html">API</a><ul class="current">
+<li class="toctree-l2 current"><a class="current reference internal" href="#">BART_SURVIAL.surv_bart</a></li>
+<li class="toctree-l2"><a class="reference internal" href="simulation.html">BART_SURVIAL.simulation</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="user_guide.html">User Guide</a></li>
 </ul>
 
 <div class="relations">
 <h3>Related Topics</h3>
 <ul>
   <li><a href="index.html">Documentation overview</a><ul>
+  <li><a href="api.html">API</a><ul>
+      <li>Previous: <a href="api.html" title="previous chapter">API</a></li>
+      <li>Next: <a href="simulation.html" title="next chapter">BART_SURVIAL.simulation</a></li>
+  </ul></li>
   </ul></li>
 </ul>
 </div>
