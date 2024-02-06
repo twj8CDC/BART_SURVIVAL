@@ -14,7 +14,11 @@ release = '02/01/2024'
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
 
-extensions = ['sphinx.ext.autodoc', 'sphinx.ext.napoleon']
+extensions = [
+    'sphinx.ext.autodoc', 
+    'sphinx.ext.napoleon',
+    'sphinx.ext.autosummary'
+]
 
 templates_path = ['_templates']
 exclude_patterns = ["test.py"]
@@ -29,4 +33,4 @@ html_static_path = ['_static']
 
 import os
 import sys
-sys.path.insert(0, os.path.abspath(os.path.join('..', '..', 'src')))
+sys.path.insert(0, os.path.abspath(os.path.join('..', '..', 'src/bart_survival')))

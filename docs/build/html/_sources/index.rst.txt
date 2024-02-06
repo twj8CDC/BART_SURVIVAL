@@ -6,12 +6,16 @@
 Welcome to BART Survival's documentation!
 =========================================
 
+
 .. toctree::
+   api
    :maxdepth: 2
    :caption: Contents:
 
-   modules
 
+
+.. .. automodule::bart_survival
+..    :members:
 
 Indices and tables
 ==================
