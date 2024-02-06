@@ -116,3 +116,67 @@ def get_coh(y_sk, cc1, sample_n = 10_000, balance=True, train=True, idx=None, se
                 "idx_test": samp_idx,
                 "seed_test": seed 
             }
+
+def pdp_eval(
+    x_sk_coh, y_sk, bart_model, var_col, values, var_name=None, sample_n=None, qntile = [0.025,0.975], diff=True, rr = True, return_all=False):
+    # set up dataset
+    pdp = get_pdp(x_sk_coh, var_col = var_col, values = values, sample_n=sample_n) 
+    # get longform
+    uniq_times = np.unique(y_sk["Survival_in_days"])
+    pdp_x, pdp_coords = get_posterior_test(uniq_times, pdp[0])
+    # get posterior draws
+    pdp_post = bart_model.sample_posterior_predictive(pdp_x, pdp_coords, extend_idata=False)
+    # get sv_val
+    print("getting sv")
+    pdp_val = get_sv_prob(pdp_post)
+    # get mean and quantile
+    print("getting sv mean and quantile")
+    pdp_mq = get_sv_mean_quant(pdp_val["sv"],pdp[1]["coord"]==1, qntile = qntile)
+
+    # get diff and rr
+    pdp_diff = None
+    pdp_rr = None
+    if diff:
+        print("getting pdp_diff")
+        pdp_diff = pdp_diff_metric(pdp_val, pdp[1]["cnt"][0], qntile=qntile)
+    if rr:
+        print("getting pdp rr")
+        pdp_rr = pdp_rr_metric(pdp_val, pdp[1]["cnt"][0], qntile=qntile)   
+
+    if return_all:
+        return {"pdp_varname":var_name, "pdp_x":pdp_x, "pdp_coords":[pdp_coords, pdp[1]["coord"]], "pdp_post":pdp_post, "pdp_val":pdp_val, "pdp_mq":pdp_mq, "pdp_diff":pdp_diff, "pdp_rr":pdp_rr}
+    else:
+        return {"pdp_varname":var_name, "pdp_val":pdp_val, "pdp_mq":pdp_mq, "pdp_diff":pdp_diff, "pdp_rr":pdp_rr}
+
+
+# def get_survival(post, axis=1, mean=True, values=True):
+#     def sv_func(x, axis = axis):
+#         return (1-x).cumprod(axis=axis)
+
+#     if "Dataset" in str(type(post)):
+#         post = post["mu"]
+    
+#     if mean:
+#         smp, nt = post.shape
+#         n = post.p_obs.values[-1] + 1
+#         t = int(nt/n)
+#         mean = post.values.mean(0).reshape(n, t)
+#         sv = np.cumprod((1-mean), axis=1)
+#         return sv
+#     else:
+#         sv = post.groupby("p_obs").apply(sv_func)
+#     if values:
+#         return sv.values
+#     return sv
+
+
+
+# def get_prob(post):
+#     if "Dataset" in str(type(post)):
+#         post = post["mu"]    
+#     smp, nt = post.shape
+#     n = post.p_obs.values[-1] + 1
+#     t = int(nt/n)
+#     prob = post.values.mean(0).reshape(n, t)
+#     return prob
+    

@@ -1,8 +1,8 @@
-from pymc_experimental.model_builder import ModelBuilder
+
 import numpy as np
 import pandas as pd
 from typing import Dict, List, Optional, Tuple, Union, Any
-
+import hashlib
 from pathlib import Path
 import arviz as az
 import pymc as pm
@@ -14,27 +14,28 @@ import warnings
 import pytensor.tensor as pt
 from pymc_bart.utils import _sample_posterior
 import cloudpickle as cpkl
-# import pyspark.sql.functions as F
-# import pyspark.sql.window as W
-import sksurv as sks
-from sksurv import nonparametric
-
 from numpy.random import RandomState
-RANDOM_SEED = 8927
-rng = np.random.default_rng(RANDOM_SEED)
 
-class BartSurvModel(ModelBuilder):
-# class BartSurvModel():
+class BartSurvModel():
+    """BART Survival Model 
+
+    Returns:
+        _type_: BartSurvModel
+    """
     _model_type = "BART_Survival"
     version = "0.1"
     def __init__(
         self,
-        model_config: Dict = None,
-        sampler_config: Dict = None,
+        model_config: Dict = None, 
+        sampler_config: Dict = None
     ):
-        sampler_config = (
-            self.get_default_sampler_config() if sampler_config is None else sampler_config
-        )
+        """Initialize BartSurvModel.
+
+        Args:
+            model_config (Dict, optional): model configuration parameters. Defaults to None.
+            sampler_config (Dict, optional): model sampling parameters. Defaults to None.
+        """
+        sampler_config = (self.get_default_sampler_config() if sampler_config is None else sampler_config)
         self.sampler_config = sampler_config
         model_config = self.get_default_model_config() if model_config is None else model_config
         self.model_config = model_config  # parameters for priors etc.
@@ -42,12 +43,27 @@ class BartSurvModel(ModelBuilder):
         self.idata: Optional[az.InferenceData] = None  # idata is generated during fitting
         self.is_fitted_ = False
 
-    def build_model(self, X: np.ndarray, 
-                        y: np.ndarray,                        
-                        weights: np.ndarray,
-                        coords: np.ndarray,
-                        predictor_names: list,
-                         **kwargs):
+    def build_model(
+        self, 
+        X: np.ndarray, 
+        y: np.ndarray,                        
+        weights: np.ndarray,
+        coords: np.ndarray,
+        predictor_names: list,
+        **kwargs
+    ): 
+        """Builds the PYMC base model.
+
+        Args:
+            X (np.ndarray): Covariate matrix in long-time form.
+            y (np.ndarray): Event status in long-time form.
+            weights (np.ndarray): Array of weights.
+            coords (np.ndarray): Array of coordinates associated with long-time form.   
+            predictor_names (list): List of names for variables.    
+
+        Returns:
+            _type_: BartSurvModel
+        """
         # check x,y,weights        
         self._generate_and_preprocess_model_data(X, y, weights, predictor_names)
         # Get model Configs
@@ -76,7 +92,15 @@ class BartSurvModel(ModelBuilder):
             mu = pm.Deterministic("mu", pm.math.invprobit(z), dims=("p_obs"))
             pm.CustomDist("y_pred", mu, w.flatten(), dist=dist_bern, logp=logp_bern, observed=self.y.flatten(), shape = x_data.shape[0])            
     
-    def sample_model(self, **kwargs):
+    def sample_model(
+        self, 
+        **kwargs
+    ) -> az.InferenceData:
+        """Initiates training/sampling of the model.
+
+        Returns:
+            az.InferenceData: Posterior data collected from training the model.
+        """
         if self.model is None:
             raise RuntimeError(
                 "The model hasn't been built yet, call .build_model() first or call .fit() instead."
@@ -86,7 +110,6 @@ class BartSurvModel(ModelBuilder):
             idata = pm.sample(**sampler_args)
         idata = self.set_idata_attrs(idata)
         return idata
-
 
     def fit(
         self,
@@ -99,12 +122,19 @@ class BartSurvModel(ModelBuilder):
         random_seed: RandomState = None,
         **kwargs: Any,
     ) -> az.InferenceData:
-        """
-        Data should be already be scaled, case-cohort formatted (if using case-cohort) and in x_sk, y_sk formats.
-        X: is a 2d numpy array
-        y: is a sk_survival formated numpy array. See utilities for y_sk processing
-        weights: is a 1d numpy array
-        predictor_names: list of strings correcpsponding to variable names
+        """Call to build and train the data.
+
+        Args:
+            y (np.ndarray): Event status in long-time form.
+            X (np.ndarray): Covariate matrix in long-time form.
+            weights (np.ndarray): Weights associated with each observation.
+            coords (np.ndarray): Coordinates associated with long-time form. 
+            progressbar (bool, optional): Displays training progress. Defaults to True.
+            predictor_names (List[str], optional): Names of covariates in X matrix. Defaults to None.
+            random_seed (RandomState, optional): Seed. Defaults to None.
+
+        Returns:
+            az.InferenceData: _description_
         """
         # build model
         self.build_model(X, y, weights, coords, predictor_names)
@@ -135,50 +165,86 @@ class BartSurvModel(ModelBuilder):
             self.idata.add_groups(offset = xr.DataArray(self.offset))
         return self.idata  # type: ignore
 
+    def set_idata_attrs(
+        self, 
+        idata:Optional[az.InferenceData]=None
+    ) -> az.InferenceData:
+        """Sets the additional information in the idata object.
 
-    def sample_posterior_predictive(self, X_pred, coords, extend_idata=False, **kwargs):
-        """Predict new data
-        If X_pred isn't formatted to long w/ time in the first column then it will add the times as first column
-        If this model was not trained in the current instance, use bart_predict
+        Args:
+            idata (Optional[az.InferenceData], optional): Idata. Defaults to None.
+
+        Returns:
+            az.InferenceData: Idata
         """
-        # if np.all(np.equal(np.unique(X_pred[:,0]),self.uniq_times)):
-        #     print("Time not detected in first column, adding times")
-        #     X_pred = get_posterior_test(self.uniq_times, X_pred)
+
+        if idata is None:
+            idata = self.idata
+        if idata is None:
+            raise RuntimeError("No idata provided to set attrs on.")
+        idata.attrs["id"] = self.id
+        idata.attrs["model_type"] = self._model_type
+        idata.attrs["version"] = self.version
+        idata.attrs["sampler_config"] = json.dumps(self.sampler_config)
+        idata.attrs["model_config"] = json.dumps(self._serializable_model_config)
+        return idata
+
+    def sample_posterior_predictive(
+        self, 
+        X_pred:np.ndarray, 
+        coords:np.ndarray, 
+        extend_idata:bool=False, 
+        **kwargs
+    )->xr.Dataset :
+        """Derives posterior predictions on updated datasets.
+
+        Args:
+            X_pred (np.ndarray): Covariate matrix in long-time format.
+            coords (np.ndarray): Coordinates associated with long-time format.
+            extend_idata (bool, optional): Adds results to the existing idata object. Defaults to False.
         
+        Returns:
+            xr.Dataset: Dataset containing the predicted outputs from the model and covariate matrix.
+        """ 
         if not self.is_fitted_:
-            print("Model is not fitted in this instance. Either refit or predict with bart_predict")
-            pass
-
-        # mcoords = {"p_obs": coords,
-                    # ("t_obs", self.X[:,0)),
-            # "xvars":self.predictor_names}
-
-
+            raise RuntimeError("Model is not fitted in this instance. Either refit or predict with bart_predict")
         with self.model:  # sample with new input data
             pm.set_data({"x_data":X_pred} , coords={"p_obs":coords})
             post_pred = pm.sample_posterior_predictive(self.idata, var_names=["mu"],**kwargs)
             if extend_idata:
                 self.idata.extend(post_pred)
-        
         posterior_predictive_samples = az.extract(
             post_pred, "posterior_predictive", combined=True
         )
 
         return posterior_predictive_samples.transpose()
     
-    def bart_predict(self, X_pred, coords, size = None, **kwargs):
-        
-        # if np.unique(X_pred[:,0]) != self.uniq_times:
-            # print("Time not detected in first column, adding times")
-            # X_pred = get_posterior_test(self.uniq_times, X_pred)
-        
+    def bart_predict(
+        self, 
+        X_pred:np.ndarray, 
+        coords:np.ndarray, 
+        size:int = None, 
+        rng:RandomState=None, 
+        **kwargs
+    )->xr.DataArray:
+        """Derives posterior predictions on updated dataset. Alternative method for re-loaded models.
+
+        Args:
+            X_pred (np.ndarray): Covariate matrix in long-time format.
+            coords (np.ndarray): Coordinates associated with long-time format.
+            size (int, optional): Sets sample of posterior draws. Defaults to None.
+            rng (RandomState, optional): Random number generator for reproducable results. Defaults to None.
+
+        Returns:
+            xr.DataArray: DataArray containing the predicted outputs from the model and covariate matrix.
+        """
         if not self.all_trees:
-            print("No tree structure loaded. Load a tree or train the model")
+            raise RuntimeError("No tree structure loaded. Load a tree or train the model")
         trees = self.all_trees
         if size is None:
             size = len(self.all_trees)
-
-        rng = np.random.default_rng()
+        if rng is None:
+            rng = np.random.default_rng(1)
         pt_x = pt.constant(X_pred)
         post_pred_mu_ = _sample_posterior(trees, pt_x, rng, size = size, shape=1)
         post_pred = pm.math.invprobit(post_pred_mu_ + self.offset).eval()
@@ -191,8 +257,16 @@ class BartSurvModel(ModelBuilder):
         return post_pred
 
     def _data_setter(
-        self, X:np.ndarray, y:np.ndarray = None
-    ):
+        self, 
+        X:np.ndarray, 
+        y:np.ndarray = None
+    )->None:
+        """Updates covariate matrix in the model object.
+
+        Args:
+            X (np.ndarray): Covariate matrix in long-time form.
+            y (np.ndarray, optional): Event status in long-time form. Defaults to None.
+        """
         with self.model:
             pm.set_data({"x_data": X})
             if y is not None:
@@ -200,8 +274,20 @@ class BartSurvModel(ModelBuilder):
 
 
     @classmethod
-    def load(cls, fname: str, treename: str):
-        
+    def load(
+        cls, 
+        fname: str, 
+        treename: str
+    ):
+        """Loads a saved model.
+
+        Args:
+            fname (str): Path to saved model object.
+            treename (str): Path to saved tree object.
+
+        Returns:
+            _type_: Returns object of SurvBartModel class.
+        """
         if ".nc" in fname:
             filepath = Path(str(fname))
             idata = az.from_netcdf(filepath)
@@ -222,8 +308,6 @@ class BartSurvModel(ModelBuilder):
         weights = dataset[:,1]
         coords = idata.posterior.coords["p_obs"].values
         predictor_names = idata.constant_data.coords["xvars"]
-        
-
         model.build_model(X, y, weights, coords, predictor_names)
 
         # All previously used data is in idata.
@@ -237,9 +321,16 @@ class BartSurvModel(ModelBuilder):
             cls.all_trees = cpkl.load(filein)
         return model
 
-    def save(self, idata_name:str, all_tree_name:str) -> None:
-        """
-        Default save idata as netcdf, alternative is to cloudpickle. Use suffix to determine
+    def save(
+        self, 
+        idata_name:str, 
+        all_tree_name:str
+    ) -> None:
+        """Saves a trained model and tree object.
+
+        Args:
+            idata_name (str): Path to saving model object.
+            all_tree_name (str): Path to saving tree object.
         """
         if self.idata is not None and "posterior" in self.idata:
             file = idata_name
@@ -258,14 +349,44 @@ class BartSurvModel(ModelBuilder):
         else:
             raise RuntimeError("No tree structure has been detected. Make sure model has been fit")
 
+    @classmethod
+    def _model_config_formatting(
+        cls, 
+        model_config: Dict
+    ) -> Dict:
+        """Serialize config to add to idata.
+        Because of json serialization, model_config values that were originally tuples or numpy are being encoded as lists.
+        This function converts them back to tuples and numpy arrays to ensure correct id encoding.
+
+        Args:
+            model_config (Dict): Model configurations.
+
+        Returns:
+            Dict: Model configurations serialized.
+        """
+        for key in model_config:
+            if isinstance(model_config[key], dict):
+                for sub_key in model_config[key]:
+                    if isinstance(model_config[key][sub_key], list):
+                        # Check if "dims" key to convert it to tuple
+                        if sub_key == "dims":
+                            model_config[key][sub_key] = tuple(model_config[key][sub_key])
+                        # Convert all other lists to numpy arrays
+                        else:
+                            model_config[key][sub_key] = np.array(model_config[key][sub_key])
+        return model_config
 
     @staticmethod
     def get_default_model_config() -> Dict:
-        print("NO DEFAULT MODEL CONFIGS, MUST SPECIFY")
-        pass
+        raise RuntimeError("NO DEFAULT MODEL CONFIGS, MUST SPECIFY")
 
     @staticmethod
     def get_default_sampler_config() -> Dict:
+        """Default Sampler Configuration.
+
+        Returns:
+            Dict: Default Sampler Configuration.
+        """ 
         sampler_config: Dict = {
             "draws": 100,
             "tune": 100,
@@ -276,18 +397,21 @@ class BartSurvModel(ModelBuilder):
         return sampler_config
 
     @property
-    def output_var(self):
+    def output_var(self)->str:
         return "y_pred"
 
     @property
-    def _serializable_model_config(self) -> Dict[str, Union[int, float, Dict]]:
+    def _serializable_model_config(
+        self
+    ) -> Dict[str, Union[int, float, Dict]]:
+        """Serialize Model Config
+
+        Returns:
+            Dict[str, Union[int, float, Dict]]: Serialized Model config.
+        """
         model_config = self.model_config.copy()
         model_config["split_rules"] = [str(sp_rule) for sp_rule in model_config["split_rules"]]
         return model_config
-
-    def _save_input_params(self, idata) -> None:
-        # idata.attrs["weights"] = json.dumps(self.weights.tolist())
-        pass
 
     def _generate_and_preprocess_model_data(
         self, 
@@ -296,9 +420,13 @@ class BartSurvModel(ModelBuilder):
         weights:np.ndarray,
         predictor_names: np.ndarray
     ) -> None:
-        """
-        x_sk
-        y_sk
+        """Preprocess loaded data.
+
+        Args:
+            X (np.ndarray): Covariate matrix in long-time format.
+            y (np.ndarray): Event status in long-time format.
+            weights (np.ndarray): Weights associated with observations.
+            predictor_names (np.ndarray): Names associated with covariates in X.
         """
         self.model_coords = None 
         assert type(X).__module__ == "numpy"
@@ -306,12 +434,10 @@ class BartSurvModel(ModelBuilder):
         self.X = X
         self.y = y
         self.uniq_times = np.unique(X[:,0])
-
         # set weights to 1 if not using a case_cohort design
         if weights is None:
             weights = np.ones(X.shape[0])
         self.weights = weights.reshape(weights.shape[0],1)
-
         # set predictor names
         # x should have time so make sure that first column is time
         if predictor_names is None:
@@ -319,18 +445,73 @@ class BartSurvModel(ModelBuilder):
             predictor_names[0] = "t"
         self.predictor_names = predictor_names
 
-        # self.y_trn, self.x_trn = surv_pre_train(y, X)        
-        # self.x_tst = get_posterior_test(self.uniq_times, X)
-        
+    @property
+    def id(self) -> str:
+        """Generate a unique hash value for the model.
 
-def get_time_transform(t_event, time_scale = 10):
+        The hash value is created using the last 16 characters of the SHA256 hash encoding, based on the model configuration,
+        version, and model type.
+
+        Returns:
+            str: A string of length 16 characters containing a unique hash of the model.
+        """
+        hasher = hashlib.sha256()
+        hasher.update(str(self.model_config.values()).encode())
+        hasher.update(self.version.encode())
+        hasher.update(self._model_type.encode())
+        return hasher.hexdigest()[:16]
+
+def get_time_transform(
+    t_event:np.ndarray, 
+    time_scale:int = 10
+)->np.ndarray:
+    """Down scale event time data.
+
+    The BartSurvModel is a resource heavy model. Because each observation is expanded into a long-time format, using non-scaled times will increase the training data by number of time points up-to each event times. To reduce the computational burden it is recommended to down-scale to the event times. 
+    In example, if there are 90 days in the event-time and down-scaling of 30 was applied, it would return times 1,2,3 corresponding to days 30,60,90.
+
+    Args:
+        t_event (np.ndarray): Event times.
+        time_scale (int, optional): Scale by which to reduce event times. Defaults to 10.
+
+    Returns:
+        np.ndarray: Down-scaled event times.
+    """
     return np.ceil(t_event/time_scale)
     
-def get_y_sklearn(status, t_event):
+def get_y_sklearn(
+    status:np.ndarray, 
+    t_event:np.ndarray
+)->np.ndarray:
+    """Reformats event status and event times to the sklearn-survival default format.
+
+    Args:
+        status (np.ndarray): Event status.
+        t_event (np.ndarray): Event time.
+
+    Returns:
+        np.ndarray: Event status/time in sklearn format.
+    """
     y = np.array(list(zip(np.array(status, dtype="bool"), t_event)), dtype=[("Status","?"),("Survival_in_days", "<f8")])
     return y
 
-def surv_pre_train(y_sk, x_sk, weight = None):
+def get_surv_pre_train(
+    y_sk:np.ndarray, 
+    x_sk:np.ndarray, 
+    weight:Optional[np.ndarray] = None
+)-> Dict:
+    """Generates long-time formatted event status and covariate matrix.
+
+    The SurvBartModel operates using a discrete time format. This means each observation is represented by a series of observations for each time point up to the event time. 
+
+    Args:
+        y_sk (np.ndarray): Event time/status in y_sk format.
+        x_sk (np.ndarray): Covariate matrix.
+        weight (Optional[np.ndarray], optional): Weights associated with each observation. If non provided, then each observation will have weights of 1. Defaults to None.
+
+    Returns:
+        Dict: Dictionary containg all of the training data including an event status array, covariate matrix, weights and coordinates associated with the long-time format.
+    """
     if weight is None:
         weight = np.ones(y_sk.shape[0])
     t_sk = y_sk["Survival_in_days"]
@@ -373,7 +554,21 @@ def surv_pre_train(y_sk, x_sk, weight = None):
         }
 
 
-def get_posterior_test(y_sk, x_test):
+def get_posterior_test(
+    y_sk:np.ndarray, 
+    x_test:np.ndarray
+)->Dict:
+    """Generates long-time format for posterior distribution testing.
+    
+    To analyze the posterior distribution, posterior predictive estimates need to be generated. Similar to the training data, the data for posterior predictions must also be in a long-time format.
+
+    Args:
+        y_sk (np.ndarray): Event time/status in y_sk format.
+        x_test (np.ndarray): Covariate matrix.
+
+    Returns:
+        Dict: Covariate matrix in long-time format and associated coordinates for the long-time format.
+    """
     uniq_times = np.unique(y_sk["Survival_in_days"])
     s0 = x_test.shape[0] # length
     s1 = x_test.shape[1] # width
@@ -387,39 +582,25 @@ def get_posterior_test(y_sk, x_test):
     return {"post_x": out, "coords":coords}
 
     
-# def get_survival(post, axis=1, mean=True, values=True):
-#     def sv_func(x, axis = axis):
-#         return (1-x).cumprod(axis=axis)
+def get_pdp(
+    x_sk:np.ndarray, 
+    var_col:List[int] = [], 
+    values:List[Union[int,float]] = [], 
+    qt:List[float] =[0.25,0.5,0.75], 
+    sample_n=None
+)->Union[np.ndarray, Dict]:
+    """Generates data for Partial Dependency Plots.
 
-#     if "Dataset" in str(type(post)):
-#         post = post["mu"]
-    
-#     if mean:
-#         smp, nt = post.shape
-#         n = post.p_obs.values[-1] + 1
-#         t = int(nt/n)
-#         mean = post.values.mean(0).reshape(n, t)
-#         sv = np.cumprod((1-mean), axis=1)
-#         return sv
-#     else:
-#         sv = post.groupby("p_obs").apply(sv_func)
-#     if values:
-#         return sv.values
-#     return sv
+    Args:
+        x_sk (np.ndarray): Covariate matrix.    
+        var_col (List[int], optional): Covariate column to generate pdp values. Defaults to [].
+        values (List[Union[int,float]], optional): Values to test on for each covariate. Defaults to [].
+        qt (List[float], optional): Quantiles to generate values on if non are given. Defaults to [0.25,0.5,0.75].
+        sample_n (_type_, optional): Sample size of large dataset. Useful for working with large datasets. Defaults to None.
 
-
-
-def get_prob(post):
-    if "Dataset" in str(type(post)):
-        post = post["mu"]    
-    smp, nt = post.shape
-    n = post.p_obs.values[-1] + 1
-    t = int(nt/n)
-    prob = post.values.mean(0).reshape(n, t)
-    return prob
-    
-
-def get_pdp(x_sk, var_col, values=[], qt=[0.25,0.5,0.75], sample_n=None):
+    Returns:
+        Union[np.ndarray, Dict]: PDP covariate matrix and dictionary for tracking PDP components.
+    """
     if len(var_col) > 2:
         print("only upto 2 variables can be used at a time")
         pass
@@ -455,78 +636,107 @@ def get_pdp(x_sk, var_col, values=[], qt=[0.25,0.5,0.75], sample_n=None):
 
 
 
-def get_sv_prob(post):
+def get_sv_prob(
+    post: Union[xr.DataArray, xr.Dataset]
+)->Dict:
+    """Generates the Survival Probability estimates for time points.
+
+    Args:
+        post (Union[xr.DataArray, xr.Dataset]): Posterior output.
+
+    Returns:
+        Dict: Risk Probability (Hazard) and Survival Probability for each draw, observation and time.
+    """
     n,k = np.unique(post.p_obs.values, return_counts=True)
-    prob = post.mu.values.reshape(-1, n.shape[0], k[0])
+    if "Dataset" in str(post):
+        prob = post.mu.values.reshape(-1, n.shape[0], k[0])
+    else:
+        prob = post.values.reshape(-1, n.shape[0], k[0])
     sv = np.cumprod(1-prob, 2)
     return {
         "prob":prob, 
         "sv":sv
         }
 
-# def get_sv_mean_quant(sv, msk, draws = True, qntile=[0.025, 0.975]):
-#     # binary mask means and quantiles
-#     #tmask
-#     sv_mt = sv[:,msk,:]
-#     sv_mt_m = sv_mt.mean(axis=1) # mean per draw
-#     if draws:
-#         sv_mt_q = np.quantile(sv_mt_m, qntile, axis = 0)
-#         sv_mt_m = sv_mt_m.mean(axis=0) # mean over draws
+def get_sv_mean_quant(
+    sv: np.ndarray, 
+    msk: np.ndarray,
+    draws: bool = True, 
+    qntile: List[float] = [0.025, 0.975]
+)->Dict:
+    """Generates mean and quantile estimates of Survival Probabilties.
 
-#     #fmask
-#     sv_mf = sv[:,~msk,:]
-#     sv_mf_m = sv_mf.mean(axis=1)
-#     if draws:
-#         sv_mf_q = np.quantile(sv_mf_m, qntile, axis = 0)
-#         sv_mf_m = sv_mf_m.mean(axis=0)
+    Args:
+        sv (np.ndarray): Survival probabilties.
+        msk (np.ndarray): Mask for selecting values to average (class of a covariate).
+        draws (bool, optional): If true, will average over the draws of the posterior, as well as masked values. Defaults to True.
+        qntile (List[float], optional): Quantiles to average over. Defaults to [0.025, 0.975].
 
-#     return {
-#         "mt_m":sv_mt_m, 
-#         "mt_q":sv_mt_q, 
-#         "mf_m":sv_mf_m, 
-#         "mf_q":sv_mf_q
-#     }
+    Returns:
+        Dict: Mask True mean, Mask True quantiles, Mask False mean, Mask False quantiles.
+    """
+    # binary mask means and quantiles
+    #tmask
+    sv_mt = sv[:,msk,:]
+    sv_mt_m = sv_mt.mean(axis=1) # mean per draw
+    if draws:
+        sv_mt_q = np.quantile(sv_mt_m, qntile, axis = 0)
+        sv_mt_m = sv_mt_m.mean(axis=0) # mean over draws
+
+    #fmask
+    sv_mf = sv[:,~msk,:]
+    sv_mf_m = sv_mf.mean(axis=1)
+    if draws:
+        sv_mf_q = np.quantile(sv_mf_m, qntile, axis = 0)
+        sv_mf_m = sv_mf_m.mean(axis=0)
+
+    return {
+        "mt_m":sv_mt_m, 
+        "mt_q":sv_mt_q, 
+        "mf_m":sv_mf_m, 
+        "mf_q":sv_mf_q
+    }
 
 # get diff metric 
-def pdp_diff_metric(pdp_val, idx, qntile = [0.025, 0.975]):
-    diff = (pdp_val["sv"][:,:idx,:] - pdp_val["sv"][:,idx:,:]).mean(1) #cov - ncov
+def pdp_diff_metric(
+    pdp_val: Dict, 
+    idx: np.ndarray, 
+    qntile: List[float] = [0.025, 0.975]
+)->Dict:
+    """Generate estimate of marginal difference from PDP posterior.
+
+    Args:
+        pdp_val (Dict): Posterior of PDP predictions.
+        idx (np.ndarray): Index of PDP sets.
+        qntile (List[float], optional): Quantile values for Credible Interval. Defaults to [0.025, 0.975].
+
+    Returns:
+        Dict: Survival Probability Difference Mean, Survival Probability Difference Quantiles.
+    """
+    diff = (pdp_val["sv"][:,:idx,:] - pdp_val["sv"][:,idx:,:]).mean(1) 
     d_m = diff.mean(0)
     d_q = np.quantile(diff, qntile, axis=0)
     return {"diff_m": np.round(d_m,3),
              "diff_q": np.round(d_q,3)}
 
-def pdp_rr_metric(pdp_val, idx, qntile = [0.025, 0.975]):
-    r = (pdp_val["prob"][:,idx:,:] / pdp_val["prob"][:,:idx,:]).mean(1) #cov/ncov
+def pdp_rr_metric(
+    pdp_val: Dict, 
+    idx:np.ndarray, 
+    qntile:list = [0.025, 0.975]
+)->Dict:
+    """Generates a Risk Ratio (Hazard Ratio) from pdp values.
+
+    Args:
+        pdp_val (Dict): Posterior of PDP predictions.
+        idx (np.ndarray): Index of PDP sets.
+        qntile (list, optional): Quantile valeus for Credible Interval. Defaults to [0.025, 0.975].
+
+    Returns:
+        Dict: Risk Ratio Mean, Risk Ratio Quantiles.
+    """
+    r = (pdp_val["prob"][:,idx:,:] / pdp_val["prob"][:,:idx,:]).mean(1) 
     r_m = r.mean(0)
     r_q = np.quantile(r, qntile, axis=0)
     return {"rr_m": np.round(r_m,3), 
             "rr_q":np.round(r_q,3)}
     
-def pdp_eval(x_sk_coh, bart_model, var_col, values, var_name=None, sample_n=None, uniq_times=None, qntile = [0.025,0.975], diff=True, rr = True, return_all=False):
-    # set up dataset
-    pdp = get_pdp(x_sk_coh, var_col = var_col, values = values, sample_n=sample_n) 
-    # get longform
-    pdp_x, pdp_coords = get_posterior_test(uniq_times, pdp[0])
-    # get posterior draws
-    pdp_post = bart_model.sample_posterior_predictive(pdp_x, pdp_coords, extend_idata=False)
-    # get sv_val
-    print("getting sv")
-    pdp_val = get_sv_prob(pdp_post)
-    # get mean and quantile
-    print("getting sv mean and quantile")
-    pdp_mq = get_sv_mean_quant(pdp_val["sv"],pdp[1]["coord"]==1, qntile = qntile)
-
-    # get diff and rr
-    pdp_diff = None
-    pdp_rr = None
-    if diff:
-        print("getting pdp_diff")
-        pdp_diff = pdp_diff_metric(pdp_val, pdp[1]["cnt"][0], qntile=qntile)
-    if rr:
-        print("getting pdp rr")
-        pdp_rr = pdp_rr_metric(pdp_val, pdp[1]["cnt"][0], qntile=qntile)   
-
-    if return_all:
-        return {"pdp_varname":var_name, "pdp_x":pdp_x, "pdp_coords":[pdp_coords, pdp[1]["coord"]], "pdp_post":pdp_post, "pdp_val":pdp_val, "pdp_mq":pdp_mq, "pdp_diff":pdp_diff, "pdp_rr":pdp_rr}
-    else:
-        return {"pdp_varname":var_name, "pdp_val":pdp_val, "pdp_mq":pdp_mq, "pdp_diff":pdp_diff, "pdp_rr":pdp_rr}

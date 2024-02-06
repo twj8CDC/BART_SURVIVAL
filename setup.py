@@ -7,8 +7,8 @@ setup(
         "arviz",
         "numpy",
         "scipy",
-        "scikit-survival",
-        "pymc_experimental",
+        # "scikit-survival",
+        # "pymc_experimental",
         "typing",
         "pathlib",
         "pymc",
@@ -17,15 +17,6 @@ setup(
         "pytensor",
         "cloudpickle"
     ],
-    # packages=find_packages(
-        # All keyword arguments below are optional:
-        # where='src/',
-        # include=[
-        #     "bart_survival"
-        # ],  
-        # exclude=['tests'],  # empty by default
-    # )
-    
     # include_package_data=True,
 
 )
