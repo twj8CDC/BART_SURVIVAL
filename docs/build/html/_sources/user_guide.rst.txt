@@ -17,6 +17,7 @@ BART_SURVIAL can be installed with:
 Examples
 --------
 Examples of performing BART survival analyses.
+The ipynb files can be found here https://github.com/twj8CDC/BART_SURVIVAL/tree/main/examples
 
 :doc:`simulation_example`
 
