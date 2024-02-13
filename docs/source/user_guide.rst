@@ -18,13 +18,10 @@ Examples
 --------
 Examples of performing BART survival analyses.
 
-Simulation example :doc:`simulation_example`
+:doc:`simulation_example`
 
-Real example :doc:`true_example`
+:doc:`true_example`
 
 
 .. toctree::
     :maxdepth: 2
-
-    simulation_example
-    true_example
